@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>合同管理系统 | Contract Management</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 配置 Tailwind 主题与扩展 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // 自定义粉色主题色阶
+                        primary: {
+                            50: '#fdf2f8',
+                            100: '#fce7f3',
+                            200: '#fbcfe8',
+                            300: '#f9a8d4',
+                            400: '#f472b6',
+                            500: '#ec4899', // 主粉色
+                            600: '#db2777',
+                            700: '#be185d',
+                            800: '#9d174d',
+                            900: '#831843',
+                        }
+                    },
+                    boxShadow: {
+                        'pink-soft': '0 4px 20px -2px rgba(236, 72, 153, 0.15)',
+                        'pink-glow': '0 0 15px rgba(236, 72, 153, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fdf2f8; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #f9a8d4; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #f472b6; 
+        }
+        
+        /* 页面切换动画 */
+        .page-section {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .page-section.active {
+            display: block;
+            opacity: 1;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 渐变文本 */
+        .text-gradient {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-image: linear-gradient(to right, #ec4899, #f43f5e);
+        }
+    </style>
+</head>
+<body class="bg-primary-50 text-gray-800 font-sans antialiased overflow-hidden flex h-screen">
+
+    <!-- 侧边栏 (Sidebar) -->
+    <aside class="w-64 bg-white shadow-pink-soft z-20 flex flex-col transition-all duration-300">
+        <!-- Logo 区域 -->
+        <div class="h-20 flex items-center justify-center border-b border-primary-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-primary-400 flex items-center justify-center text-white shadow-pink-glow">
+                    <i class="fa-solid fa-file-signature text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-gradient tracking-wide">CMS Pro</h1>
+            </div>
+        </div>
+
+        <!-- 导航菜单 -->
+        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            <p class="px-4 text-xs font-semibold text-primary-300 uppercase tracking-wider mb-2">主菜单</p>
+            
+            <a href="#" onclick="switchPage('dashboard')" id="nav-dashboard" class="nav-item flex items-center gap-3 px-4 py-3 text-primary-600 bg-primary-50 rounded-xl transition-all font-medium border-l-4 border-primary-500">
+                <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                仪表盘
+            </a>
+            
+            <a href="#" onclick="switchPage('contract-list')" id="nav-contract-list" class="nav-item flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all font-medium border-l-4 border-transparent hover:border-primary-300">
+                <i class="fa-solid fa-file-contract w-5 text-center"></i>
+                合同管理
+            </a>
+
+            <a href="#" onclick="switchPage('create-contract')" id="nav-create-contract" class="nav-item flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all font-medium border-l-4 border-transparent hover:border-primary-300">
+                <i class="fa-solid fa-plus-circle w-5 text-center"></i>
+                新建合同
+            </a>
+
+            <p class="px-4 text-xs font-semibold text-primary-300 uppercase tracking-wider mb-2 mt-6">其他</p>
+
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all font-medium border-l-4 border-transparent hover:border-primary-300">
+                <i class="fa-solid fa-users w-5 text-center"></i>
+                客商管理
+            </a>
+            
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all font-medium border-l-4 border-transparent hover:border-primary-300">
+                <i class="fa-solid fa-gear w-5 text-center"></i>
+                系统设置
+            </a>
+        </nav>
+
+        <!-- 底部用户信息 -->
+        <div class="p-4 border-t border-primary-100">
+            <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-primary-50 transition-colors cursor-pointer">
+                <img src="https://ui-avatars.com/api/?name=Zhenye+Yu&background=fbcfe8&color=be185d" alt="User" class="w-10 h-10 rounded-full border-2 border-primary-200">
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gray-800 truncate">于振业</p>
+                    <p class="text-xs text-primary-500 truncate">系统管理员</p>
+                </div>
+                <i class="fa-solid fa-right-from-bracket text-gray-400 hover:text-primary-500"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 主体内容区 (Main Content) -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- 顶部导航条 (Header) -->
+        <header class="h-20 bg-white/80 backdrop-blur-md shadow-sm flex items-center justify-between px-8 z-10 sticky top-0">
+            <div class="flex items-center bg-primary-50 rounded-full px-4 py-2 w-96 border border-primary-100 focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-100 transition-all">
+                <i class="fa-solid fa-search text-primary-400"></i>
+                <input type="text" placeholder="全局搜索合同、客商名称..." class="bg-transparent border-none outline-none w-full ml-3 text-sm text-gray-700 placeholder-primary-300">
+            </div>
+
+            <div class="flex items-center gap-6">
+                <button class="relative text-gray-400 hover:text-primary-500 transition-colors">
+                    <i class="fa-regular fa-bell text-xl"></i>
+                    <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                </button>
+                <button class="w-10 h-10 rounded-full bg-gradient-to-r from-primary-500 to-rose-400 text-white shadow-pink-soft hover:shadow-pink-glow transition-all transform hover:-translate-y-0.5">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- 动态内容渲染区 -->
+        <div class="flex-1 overflow-y-auto p-8 relative">
+            
+            <!-- 页面 1: 仪表盘 (Dashboard) -->
+            <div id="page-dashboard" class="page-section active space-y-8">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">欢迎回来，于振业 👋</h2>
+                        <p class="text-sm text-gray-500 mt-1">这是您今日的合同数据概览。</p>
+                    </div>
+                    <button onclick="switchPage('create-contract')" class="px-6 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-medium rounded-xl shadow-pink-soft transition-all">
+                        <i class="fa-solid fa-pen-nib mr-2"></i> 起草新合同
+                    </button>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Card 1 -->
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-primary-50 relative overflow-hidden group">
+                        <div class="absolute -right-6 -top-6 w-24 h-24 bg-primary-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+                        <div class="flex justify-between items-start relative z-10">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500 mb-1">合同总数</p>
+                                <h3 class="text-3xl font-bold text-gray-800">1,284</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-layer-group"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-green-500 flex items-center font-medium"><i class="fa-solid fa-arrow-trend-up mr-1"></i> 12%</span>
+                            <span class="text-gray-400 ml-2">较上月</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Card 2 -->
+                    <div class="bg-gradient-to-br from-primary-500 to-rose-500 rounded-2xl p-6 shadow-pink-soft text-white relative overflow-hidden transform hover:-translate-y-1 transition-transform">
+                        <div class="absolute right-0 bottom-0 opacity-10 text-7xl"><i class="fa-solid fa-file-signature"></i></div>
+                        <div class="flex justify-between items-start relative z-10">
+                            <div>
+                                <p class="text-sm font-medium text-primary-100 mb-1">待我审批</p>
+                                <h3 class="text-3xl font-bold text-white">12</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="bg-white/20 px-2 py-0.5 rounded-md">需要立即处理</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-primary-50 relative overflow-hidden group">
+                        <div class="flex justify-between items-start relative z-10">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500 mb-1">本月新签金额 (元)</p>
+                                <h3 class="text-3xl font-bold text-gray-800">¥ 845.2w</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-green-50 text-green-500 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-sack-dollar"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-green-500 flex items-center font-medium"><i class="fa-solid fa-arrow-trend-up mr-1"></i> 8.4%</span>
+                            <span class="text-gray-400 ml-2">较上月</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 4 -->
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-primary-50 relative overflow-hidden group">
+                        <div class="flex justify-between items-start relative z-10">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500 mb-1">即将过期</p>
+                                <h3 class="text-3xl font-bold text-gray-800">5</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-gray-400">30天内到期合同</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快捷操作区 -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-primary-50">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 border-l-4 border-primary-500 pl-3">快捷通道</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <button class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-100 hover:border-primary-200 hover:bg-primary-50 text-gray-600 hover:text-primary-600 transition-all group">
+                            <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-primary-500 mb-3 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-stamp text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium">用印申请</span>
+                        </button>
+                        <button class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-100 hover:border-primary-200 hover:bg-primary-50 text-gray-600 hover:text-primary-600 transition-all group">
+                            <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 mb-3 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-file-invoice-dollar text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium">付款申请</span>
+                        </button>
+                        <button class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-100 hover:border-primary-200 hover:bg-primary-50 text-gray-600 hover:text-primary-600 transition-all group">
+                            <div class="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-500 mb-3 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-handshake text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium">客商准入</span>
+                        </button>
+                        <button class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-100 hover:border-primary-200 hover:bg-primary-50 text-gray-600 hover:text-primary-600 transition-all group">
+                            <div class="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 mb-3 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-magnifying-glass-chart text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium">数据报表</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 页面 2: 合同列表 (Contract List) - 卡片式布局 -->
+            <div id="page-contract-list" class="page-section space-y-6">
+                <!-- 头部操作区 -->
+                <div class="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-primary-50 gap-4">
+                    <div class="flex gap-2">
+                        <select class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400 bg-gray-50 text-gray-700">
+                            <option>所有状态</option>
+                            <option>起草中</option>
+                            <option>待审批</option>
+                            <option>履行中</option>
+                            <option>已完成</option>
+                        </select>
+                        <select class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400 bg-gray-50 text-gray-700">
+                            <option>所有类型</option>
+                            <option>采购合同</option>
+                            <option>销售合同</option>
+                            <option>服务协议</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="relative">
+                            <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" placeholder="搜索合同编号/名称..." class="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400 w-64 transition-all">
+                        </div>
+                        <button onclick="switchPage('create-contract')" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg shadow-pink-soft transition-colors flex items-center">
+                            <i class="fa-solid fa-plus mr-2"></i> 新建
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 卡片列表网格 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    
+                    <!-- 合同卡片 1 -->
+                    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-pink-soft hover:-translate-y-1 transition-all duration-300 group">
+                        <div class="p-5 border-b border-gray-50 relative">
+                            <!-- 状态标签 -->
+                            <span class="absolute top-4 right-4 px-2.5 py-1 text-xs font-semibold rounded-md bg-green-50 text-green-600 border border-green-100">
+                                <i class="fa-solid fa-circle-check mr-1"></i>履行中
+                            </span>
+                            <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center text-lg mb-4">
+                                <i class="fa-solid fa-cloud"></i>
+                            </div>
+                            <h3 class="font-bold text-gray-800 text-lg mb-1 truncate" title="阿里云服务器年度采购合同">阿里云服务器采购合同</h3>
+                            <p class="text-xs text-gray-400 font-mono">HT-20260317-001</p>
+                        </div>
+                        <div class="p-5 space-y-3 bg-gray-50/50">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">相对方</span>
+                                <span class="font-medium text-gray-700">阿里云计算有限公司</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">合同金额</span>
+                                <span class="font-bold text-primary-600">¥ 125,000.00</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">签订日期</span>
+                                <span class="text-gray-700">2026-03-01</span>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-white flex justify-end gap-2 border-t border-gray-50">
+                            <button class="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-primary-500 hover:bg-primary-50 rounded transition-colors">查看</button>
+                            <button class="px-3 py-1.5 text-xs font-medium text-white bg-primary-500 hover:bg-primary-600 rounded shadow-sm transition-colors">处理</button>
+                        </div>
+                    </div>
+
+                    <!-- 合同卡片 2 -->
+                    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-pink-soft hover:-translate-y-1 transition-all duration-300 group">
+                        <div class="p-5 border-b border-gray-50 relative">
+                            <span class="absolute top-4 right-4 px-2.5 py-1 text-xs font-semibold rounded-md bg-orange-50 text-orange-600 border border-orange-100">
+                                <i class="fa-solid fa-hourglass-half mr-1"></i>待审批
+                            </span>
+                            <div class="w-10 h-10 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center text-lg mb-4">
+                                <i class="fa-solid fa-code"></i>
+                            </div>
+                            <h3 class="font-bold text-gray-800 text-lg mb-1 truncate" title="OA系统二期开发外包协议">OA系统二期外包协议</h3>
+                            <p class="text-xs text-gray-400 font-mono">HT-20260315-042</p>
+                        </div>
+                        <div class="p-5 space-y-3 bg-gray-50/50">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">相对方</span>
+                                <span class="font-medium text-gray-700">鼎盛软件科技有限公司</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">合同金额</span>
+                                <span class="font-bold text-primary-600">¥ 380,000.00</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">拟签日期</span>
+                                <span class="text-gray-700">2026-03-20</span>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-white flex justify-end gap-2 border-t border-gray-50">
+                            <button class="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-primary-500 hover:bg-primary-50 rounded transition-colors">查看</button>
+                            <button class="px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 rounded shadow-sm transition-colors">去审批</button>
+                        </div>
+                    </div>
+
+                    <!-- 合同卡片 3 -->
+                    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-pink-soft hover:-translate-y-1 transition-all duration-300 group">
+                        <div class="p-5 border-b border-gray-50 relative">
+                            <span class="absolute top-4 right-4 px-2.5 py-1 text-xs font-semibold rounded-md bg-gray-100 text-gray-600 border border-gray-200">
+                                <i class="fa-solid fa-folder-closed mr-1"></i>已归档
+                            </span>
+                            <div class="w-10 h-10 rounded-lg bg-primary-50 text-primary-500 flex items-center justify-center text-lg mb-4">
+                                <i class="fa-solid fa-building"></i>
+                            </div>
+                            <h3 class="font-bold text-gray-800 text-lg mb-1 truncate" title="北京总部办公室租赁合同">北京总部办公室租赁</h3>
+                            <p class="text-xs text-gray-400 font-mono">HT-20230101-001</p>
+                        </div>
+                        <div class="p-5 space-y-3 bg-gray-50/50">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">相对方</span>
+                                <span class="font-medium text-gray-700">朝阳国贸物业管理处</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">合同金额</span>
+                                <span class="font-bold text-primary-600">¥ 1,200,000.00</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">到期日期</span>
+                                <span class="text-gray-700">2025-12-31</span>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-white flex justify-end gap-2 border-t border-gray-50">
+                            <button class="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-primary-500 hover:bg-primary-50 rounded transition-colors">查看详情</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 合同卡片 4 -->
+                    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-pink-soft hover:-translate-y-1 transition-all duration-300 group">
+                        <div class="p-5 border-b border-gray-50 relative">
+                            <span class="absolute top-4 right-4 px-2.5 py-1 text-xs font-semibold rounded-md bg-red-50 text-red-600 border border-red-100">
+                                <i class="fa-solid fa-circle-exclamation mr-1"></i>将过期
+                            </span>
+                            <div class="w-10 h-10 rounded-lg bg-yellow-50 text-yellow-500 flex items-center justify-center text-lg mb-4">
+                                <i class="fa-solid fa-server"></i>
+                            </div>
+                            <h3 class="font-bold text-gray-800 text-lg mb-1 truncate" title="IDC机房托管服务协议">IDC机房托管服务协议</h3>
+                            <p class="text-xs text-gray-400 font-mono">HT-20240410-015</p>
+                        </div>
+                        <div class="p-5 space-y-3 bg-gray-50/50">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">相对方</span>
+                                <span class="font-medium text-gray-700">世纪互联数据中心</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">合同金额</span>
+                                <span class="font-bold text-primary-600">¥ 85,000.00</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">到期日期</span>
+                                <span class="text-red-500 font-medium">2026-04-10</span>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-white flex justify-end gap-2 border-t border-gray-50">
+                            <button class="px-3 py-1.5 text-xs font-medium text-primary-500 border border-primary-200 hover:bg-primary-50 rounded transition-colors">续约</button>
+                            <button class="px-3 py-1.5 text-xs font-medium text-white bg-primary-500 hover:bg-primary-600 rounded shadow-sm transition-colors">处理</button>
+                        </div>
+                    </div>
+
+                </div>
+                
+                <!-- 分页 -->
+                <div class="flex justify-center mt-8">
+                    <nav class="flex items-center gap-1">
+                        <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-primary-50 hover:text-primary-500 transition-colors cursor-not-allowed"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                        <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary-500 text-white shadow-md font-medium text-sm">1</button>
+                        <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-primary-50 hover:text-primary-500 transition-colors font-medium text-sm">2</button>
+                        <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-primary-50 hover:text-primary-500 transition-colors font-medium text-sm">3</button>
+                        <span class="px-2 text-gray-400">...</span>
+                        <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-primary-50 hover:text-primary-500 transition-colors"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- 页面 3: 新建合同 (Create Contract Form) -->
+            <div id="page-create-contract" class="page-section">
+                <div class="max-w-4xl mx-auto">
+                    <!-- 面包屑与标题 -->
+                    <div class="mb-6">
+                        <div class="flex items-center text-sm text-gray-500 mb-2">
+                            <a href="#" onclick="switchPage('contract-list')" class="hover:text-primary-500 transition-colors">合同管理</a>
+                            <i class="fa-solid fa-chevron-right text-[10px] mx-2"></i>
+                            <span class="text-gray-800 font-medium">新建合同起草</span>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-800">起草新合同</h2>
+                    </div>
+
+                    <!-- 表单卡片 -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-primary-50 p-8">
+                        
+                        <!-- 进度条 -->
+                        <div class="flex items-center mb-8 pb-8 border-b border-gray-100">
+                            <div class="flex flex-col items-center relative w-1/3">
+                                <div class="w-10 h-10 rounded-full bg-primary-500 text-white flex items-center justify-center font-bold shadow-md z-10">1</div>
+                                <span class="text-sm font-medium text-primary-600 mt-2">基本信息</span>
+                                <div class="absolute top-5 left-1/2 w-full h-1 bg-primary-100"></div>
+                            </div>
+                            <div class="flex flex-col items-center relative w-1/3">
+                                <div class="w-10 h-10 rounded-full bg-white border-2 border-primary-200 text-primary-300 flex items-center justify-center font-bold z-10">2</div>
+                                <span class="text-sm font-medium text-gray-400 mt-2">正文与附件</span>
+                                <div class="absolute top-5 left-1/2 w-full h-1 bg-gray-100"></div>
+                            </div>
+                            <div class="flex flex-col items-center relative w-1/3">
+                                <div class="w-10 h-10 rounded-full bg-white border-2 border-gray-200 text-gray-300 flex items-center justify-center font-bold z-10">3</div>
+                                <span class="text-sm font-medium text-gray-400 mt-2">审批设置</span>
+                            </div>
+                        </div>
+
+                        <form class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- 输入组 1 -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">合同名称 <span class="text-red-500">*</span></label>
+                                    <input type="text" placeholder="例如：2026年度服务器采购合同" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all text-gray-700">
+                                </div>
+                                <!-- 输入组 2 -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">合同类型 <span class="text-red-500">*</span></label>
+                                    <select class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all text-gray-700 bg-white">
+                                        <option value="" disabled selected>请选择合同类型</option>
+                                        <option>采购类</option>
+                                        <option>销售类</option>
+                                        <option>服务类</option>
+                                        <option>保密协议</option>
+                                    </select>
+                                </div>
+
+                                <!-- 输入组 3 -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">相对方名称 <span class="text-red-500">*</span></label>
+                                    <div class="relative">
+                                        <input type="text" placeholder="输入客商名称进行检索" class="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all text-gray-700">
+                                        <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-primary-400 hover:text-primary-600">
+                                            <i class="fa-solid fa-address-book"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- 输入组 4 -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">合同总金额 (元)</label>
+                                    <div class="relative">
+                                        <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium">¥</span>
+                                        <input type="number" placeholder="0.00" class="w-full pl-8 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all text-gray-700 font-mono">
+                                    </div>
+                                </div>
+
+                                <!-- 输入组 5 -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">生效日期</label>
+                                    <input type="date" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all text-gray-700">
+                                </div>
+                                <!-- 输入组 6 -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">失效日期</label>
+                                    <input type="date" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all text-gray-700">
+                                </div>
+                            </div>
+
+                            <!-- 全宽文本域 -->
+                            <div class="space-y-2 pt-2">
+                                <label class="block text-sm font-medium text-gray-700">合同摘要 / 背景说明</label>
+                                <textarea rows="3" placeholder="简要描述本合同的背景、主要内容或特殊条款..." class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all text-gray-700 resize-none"></textarea>
+                            </div>
+
+                            <!-- 底部操作按钮 -->
+                            <div class="flex justify-end gap-4 pt-6 border-t border-gray-100 mt-8">
+                                <button type="button" class="px-6 py-2.5 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800 font-medium rounded-xl transition-colors">
+                                    保存草稿
+                                </button>
+                                <button type="button" onclick="alert('进入下一步：上传正文！');" class="px-8 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-medium rounded-xl shadow-pink-soft hover:shadow-pink-glow transition-all flex items-center">
+                                    下一步 <i class="fa-solid fa-arrow-right ml-2"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- JavaScript 交互逻辑 -->
+    <script>
+        // 简单的页面路由/切换控制
+        function switchPage(pageId) {
+            // 1. 隐藏所有页面内容
+            const pages = document.querySelectorAll('.page-section');
+            pages.forEach(page => {
+                page.classList.remove('active');
+            });
+
+            // 2. 显示目标页面
+            const targetPage = document.getElementById('page-' + pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
+
+            // 3. 更新侧边栏导航高亮状态
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                // 重置样式
+                item.classList.remove('text-primary-600', 'bg-primary-50', 'border-primary-500');
+                item.classList.add('text-gray-500', 'border-transparent');
+            });
+
+            const activeNav = document.getElementById('nav-' + pageId);
+            if (activeNav) {
+                // 应用激活样式
+                activeNav.classList.remove('text-gray-500', 'border-transparent');
+                activeNav.classList.add('text-primary-600', 'bg-primary-50', 'border-primary-500');
+            }
+        }
+
+        // 页面加载完成后默认显示仪表盘
+        document.addEventListener('DOMContentLoaded', () => {
+            switchPage('dashboard');
+        });
+    </script>
+</body>
+</html>
